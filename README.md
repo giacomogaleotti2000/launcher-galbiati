@@ -1,6 +1,6 @@
-# CNC LAUNCHER
+# GALBIATI LAUNCHER
 
-Installa, apre e aggiorna le app CNC di Galbiati Costruzioni Meccaniche (oggi HEIDENHAIN-SIEMENS
+Installa, apre e aggiorna le app sviluppate internamente a Galbiati Costruzioni Meccaniche (oggi HEIDENHAIN-SIEMENS
 CONVERTER) su **Windows** e **macOS (Apple Silicon)**.
 
 ## Scaricare il launcher
@@ -15,9 +15,7 @@ Esegui comunque*, macOS chiede *clic destro -> Apri*.
 
 ## Installare le app
 
-Le app stanno in un repository **privato**: al primo avvio il launcher chiede un token GitHub di
-sola lettura, che si ottiene da chi gestisce il software. Il token viene conservato nel portachiavi
-del sistema. Poi **Installa** / **Aggiorna** / **Apri** dalla Libreria. Dettagli: [docs/launcher.md](docs/launcher.md).
+Le app stanno in un repository **privato**: al primo avvio il launcher chiede un token GitHub di sola lettura, che si ottiene da chi gestisce il software. Il token viene conservato nel portachiavi del sistema. Poi **Installa** / **Aggiorna** / **Apri** dalla Libreria. Dettagli: [docs/launcher.md](docs/launcher.md).
 
 ## Sviluppo
 
