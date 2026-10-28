@@ -57,7 +57,7 @@ Non salvarlo in file, mail o chat: incollalo direttamente nel launcher.
 ## 5. Primo download del launcher
 
 Il launcher si scarica una volta dalla pagina pubblica delle Release, senza account:
-<https://github.com/giacomogaleotti2000/cnc-launcher/releases/latest> -> file
+<https://github.com/giacomogaleotti2000/launcher-galbiati/releases/latest> -> file
 `cnc-launcher-<versione>-windows-x64.zip` o `...-macos-arm64.tar.gz`. Estrai la cartella dove
 preferisci e avvia `cnc-launcher.exe` (Windows) o `cnc-launcher` (macOS). Le app invece si
 aggiornano dal launcher.

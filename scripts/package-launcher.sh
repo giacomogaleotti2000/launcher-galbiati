@@ -28,7 +28,7 @@ cat > "$STAGE/LEGGIMI.txt" <<TXT
 CNC LAUNCHER $VERSION ($PLATFORM)
 
 Avvio: $EXE
-Al primo avvio chiede un token GitHub di sola lettura (guida: https://github.com/giacomogaleotti2000/cnc-launcher/blob/main/docs/launcher.md)
+Al primo avvio chiede un token GitHub di sola lettura (guida: https://github.com/giacomogaleotti2000/launcher-galbiati/blob/main/docs/launcher.md)
 e lo conserva nel portachiavi del sistema. Le app vengono installate nella cartella dati dell'utente.
 Licenze dei font in licenze/.
 TXT

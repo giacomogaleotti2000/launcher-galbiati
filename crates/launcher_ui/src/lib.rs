@@ -19,7 +19,7 @@ pub use ui_theme as theme;
 pub const SIDEBAR_WIDTH: f32 = 200.0;
 pub const TOPBAR_HEIGHT: f32 = 44.0;
 /// Guida alla creazione del token (nel repository).
-pub const GUIDE: &str = "https://github.com/giacomogaleotti2000/cnc-launcher/blob/main/docs/launcher.md";
+pub const GUIDE: &str = "https://github.com/giacomogaleotti2000/launcher-galbiati/blob/main/docs/launcher.md";
 
 /// Crea la sorgente dei rilasci di un'app con il token.
 pub type SourceFactory = Arc<dyn Fn(&AppSpec, &Secret) -> launcher_core::Result<Box<dyn ReleaseSource>> + Send + Sync>;
