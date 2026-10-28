@@ -1,0 +1,7 @@
+# Windows: runtime C/C++ di Microsoft (VCRUNTIME140.dll) dentro l'eseguibile, cosi' l'.exe parte
+# anche su un Windows senza "Visual C++ Redistributable" installato.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.aarch64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

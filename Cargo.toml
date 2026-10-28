@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = ["crates/ui_theme", "crates/launcher_core", "crates/launcher_ui", "crates/launcher_app"]
+default-members = ["crates/launcher_app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+unreachable = "deny"
+indexing_slicing = "deny"
+print_stdout = "warn"
+print_stderr = "warn"
+dbg_macro = "deny"
+
+[profile.release]
+lto = "thin"

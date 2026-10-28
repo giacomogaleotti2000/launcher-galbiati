@@ -1,0 +1,22 @@
+[package]
+name = "launcher_ui"
+description = "Interfaccia egui del launcher privato (stesso tema delle app)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+# appunti per il pulsante "Incolla" (lo stesso crate usato da eframe per Ctrl+V)
+arboard = { version = "3", default-features = false }
+egui = "0.37"
+launcher_core = { path = "../launcher_core" }
+ui_theme = { path = "../ui_theme" }
+
+[dev-dependencies]
+egui_kittest = { version = "0.37", features = ["wgpu", "snapshot"] }
+flate2 = "1"
+image = { version = "0.25", default-features = false, features = ["png"] }
+tar = "0.4"
+
+[lints]
+workspace = true

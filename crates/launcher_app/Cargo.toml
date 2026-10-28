@@ -1,0 +1,21 @@
+[package]
+name = "launcher_app"
+description = "Launcher privato delle app (eframe + wgpu)"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "cnc-launcher"
+path = "src/main.rs"
+
+[dependencies]
+ui_theme = { path = "../ui_theme" }
+eframe = { version = "0.37", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "clipboard", "wayland", "x11", "persistence"] }
+egui = "0.37"
+image = { version = "0.25", default-features = false, features = ["png"] }
+launcher_core = { path = "../launcher_core" }
+launcher_ui = { path = "../launcher_ui" }
+
+[lints]
+workspace = true

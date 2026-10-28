@@ -1,0 +1,5 @@
+# I test possono usare unwrap/expect/indicizzazione: il codice di produzione no.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-panic-in-tests = true

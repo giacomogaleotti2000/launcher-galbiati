@@ -1,0 +1,81 @@
+# Compila CNC LAUNCHER per Windows x64 e macOS Apple Silicon e pubblica una Release PUBBLICA:
+# chiunque puo' scaricare il launcher. Le app restano nel repository privato e si installano dal
+# launcher con un token di sola lettura.
+#
+# - push di un tag `launcher-vX.Y.Z` -> build + Release con archivi e .sha256
+# - avvio manuale (workflow_dispatch) -> solo build, archivi scaricabili dalla pagina dell'esecuzione
+name: release
+
+on:
+  push:
+    tags: ["launcher-v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versione di prova (nessuna Release viene creata)"
+        required: false
+        default: "0.0.0-dev"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, platform: windows-x64 }
+          - { os: macos-latest, target: aarch64-apple-darwin, platform: macos-arm64 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: Versione
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            echo "VERSION=${GITHUB_REF_NAME#launcher-v}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION=${{ inputs.version || '0.0.0-dev' }}" >> "$GITHUB_ENV"
+          fi
+      - name: Test
+        run: cargo test --workspace --locked
+      - name: Compilazione
+        run: cargo build --release --locked -p launcher_app --target ${{ matrix.target }}
+      - name: Pacchetto
+        run: bash scripts/package-launcher.sh "${{ matrix.target }}" "${{ matrix.platform }}" "$VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg-${{ matrix.platform }}
+          path: dist/*
+          if-no-files-found: error
+
+  release:
+    name: release pubblica
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: pkg-*
+          merge-multiple: true
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#launcher-v}"
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "CNC LAUNCHER $VERSION" \
+            --notes "Windows x64: cnc-launcher-$VERSION-windows-x64.zip. macOS Apple Silicon: cnc-launcher-$VERSION-macos-arm64.tar.gz. Impronte SHA-256 nei file .sha256. Guida al primo avvio: docs/launcher.md."

@@ -1,0 +1,24 @@
+[package]
+name = "launcher_core"
+description = "Launcher privato: catalogo app, sorgenti di rilascio (GitHub privato, in futuro cartella di rete), verifica SHA-256, installazione per utente, token nel portachiavi del sistema"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+directories = "6"
+flate2 = "1"
+keyring = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11"
+tar = "0.4"
+ureq = "3"
+zip = { version = "9", default-features = false, features = ["deflate"] }
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+flate2 = "1"
+tar = "0.4"
