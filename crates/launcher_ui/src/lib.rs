@@ -12,6 +12,7 @@ use egui::{Align, Color32, CornerRadius, FontId, Frame, Layout, Margin, RichText
 use launcher_core::catalog::AppSpec;
 use launcher_core::install::{Installed, Installer};
 use launcher_core::secret::{Secret, TokenStore};
+use launcher_core::selfupdate::{self, LauncherRelease, LauncherUpdater};
 use launcher_core::source::{ReleaseSource, RemoteRelease};
 use launcher_core::{LauncherError, current_platform};
 pub use ui_theme as theme;
@@ -64,6 +65,18 @@ pub enum Op {
   Error(String),
 }
 
+/// Aggiornamento del launcher stesso (Release pubblica, senza token).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum SelfUpdate {
+  #[default]
+  Unknown,
+  Checking,
+  UpToDate,
+  Available(Box<LauncherRelease>),
+  Applying,
+  Error(String),
+}
+
 /// Una riga della libreria.
 #[derive(Clone, Debug)]
 pub struct AppRow {
@@ -104,6 +117,8 @@ enum Event {
     index: usize,
     result: launcher_core::Result<Installed>,
   },
+  LauncherChecked(launcher_core::Result<Option<LauncherRelease>>),
+  LauncherApplied(launcher_core::Result<PathBuf>),
 }
 
 /// Stato del launcher.
@@ -118,6 +133,13 @@ pub struct LauncherUi {
   pub inline_jobs: bool,
   /// Lettura degli appunti per il pulsante "Incolla" (sostituibile nei test).
   pub clipboard: ClipboardReader,
+  /// Lettore delle Release pubbliche del launcher (None: nessun controllo, es. nei test).
+  pub maybe_updater: Option<LauncherUpdater>,
+  pub self_update: SelfUpdate,
+  /// Proporre "Installa per questo utente" (launcher avviato fuori dalla cartella dell'utente).
+  pub offer_install: bool,
+  /// Il launcher deve chiudersi (dopo aver avviato la copia installata o aggiornata).
+  pub exit_requested: bool,
   /// Token in prova: salvato nel portachiavi solo se GitHub lo accetta.
   maybe_pending: Option<Secret>,
   store: Arc<dyn TokenStore>,
@@ -154,6 +176,10 @@ impl LauncherUi {
       maybe_message: None,
       inline_jobs: false,
       clipboard: Arc::new(system_clipboard),
+      maybe_updater: None,
+      self_update: SelfUpdate::Unknown,
+      offer_install: false,
+      exit_requested: false,
       maybe_pending: None,
       store,
       factory,
@@ -195,6 +221,36 @@ impl LauncherUi {
         c.request_repaint();
       }
     });
+  }
+
+  /// Controlla se esiste un launcher piu' recente (Release pubblica, nessun token).
+  pub fn check_launcher(&mut self) {
+    let Some(updater) = self.maybe_updater.clone() else { return };
+    self.self_update = SelfUpdate::Checking;
+    self.spawn(move |tx| {
+      let _ = tx.send(Event::LauncherChecked(updater.check(selfupdate::current_version())));
+    });
+  }
+
+  /// Scarica e mette al suo posto il launcher nuovo, poi lo riavvia.
+  pub fn update_launcher(&mut self) {
+    let (Some(updater), SelfUpdate::Available(rel)) = (self.maybe_updater.clone(), &self.self_update) else { return };
+    let rel = (**rel).clone();
+    self.self_update = SelfUpdate::Applying;
+    self.spawn(move |tx| {
+      let result = std::env::current_exe()
+        .map_err(|e| LauncherError::new(format!("percorso del launcher: {e}")))
+        .and_then(|exe| updater.apply(&rel, &exe));
+      let _ = tx.send(Event::LauncherApplied(result));
+    });
+  }
+
+  /// Copia il launcher nella cartella dell'utente, crea i collegamenti e avvia la copia.
+  pub fn install_launcher_for_user(&mut self) {
+    match selfupdate::install_for_user(self.installer.root()).and_then(|exe| selfupdate::relaunch(&exe)) {
+      Ok(()) => self.exit_requested = true,
+      Err(e) => self.maybe_message = Some((false, e.message)),
+    }
   }
 
   /// Controlla l'ultima versione di tutte le app.
@@ -332,6 +388,17 @@ impl LauncherUi {
             row.op = Op::Installing;
           }
         }
+        Event::LauncherChecked(result) => {
+          self.self_update = match result {
+            Ok(Some(rel)) => SelfUpdate::Available(Box::new(rel)),
+            Ok(None) => SelfUpdate::UpToDate,
+            Err(e) => SelfUpdate::Error(e.message),
+          };
+        }
+        Event::LauncherApplied(result) => match result.and_then(|exe| selfupdate::relaunch(&exe)) {
+          Ok(()) => self.exit_requested = true,
+          Err(e) => self.self_update = SelfUpdate::Error(e.message),
+        },
         Event::Installed { index, result } => {
           if let Some(row) = self.rows.get_mut(index) {
             match result {
@@ -353,6 +420,9 @@ impl LauncherUi {
       self.maybe_ctx = Some(ui.ctx().clone());
     }
     self.poll();
+    if self.exit_requested {
+      ui.ctx().send_viewport_cmd(egui::ViewportCommand::Close);
+    }
     egui::Panel::top("topbar")
       .exact_size(TOPBAR_HEIGHT)
       .resizable(false)
@@ -386,6 +456,7 @@ impl LauncherUi {
           .inner_margin(Margin::same(20))
           .show(ui, |ui| {
             ui.set_min_size(ui.available_size());
+            self.launcher_banner(ui);
             if self.maybe_token.is_none() {
               self.token_page(ui);
             } else {
@@ -431,6 +502,66 @@ impl LauncherUi {
     ui.with_layout(Layout::bottom_up(Align::Min), |ui| {
       ui_theme::brand::logo(ui, 40.0);
     });
+  }
+
+  /// Avvisi sul launcher stesso: installazione per utente, nuova versione.
+  fn launcher_banner(&mut self, ui: &mut Ui) {
+    let mut install = false;
+    let mut update = false;
+    let shown = self.offer_install || matches!(self.self_update, SelfUpdate::Available(_) | SelfUpdate::Applying);
+    if !shown {
+      return;
+    }
+    Frame::new()
+      .fill(theme::ACCENT.gamma_multiply(0.12))
+      .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.6)))
+      .corner_radius(theme::RADIUS)
+      .inner_margin(Margin::same(12))
+      .show(ui, |ui| {
+        ui.set_width(ui.available_width());
+        if self.offer_install {
+          ui.label(
+            RichText::new(
+              "Il launcher non e' installato nel tuo profilo. Installalo: avrai il collegamento nel menu Start e sul \
+               Desktop, e gli aggiornamenti non chiederanno la password di amministratore.",
+            )
+            .color(theme::INK),
+          );
+          ui.add_space(6.0);
+          let b =
+            egui::Button::new(RichText::new("Installa per questo utente").color(Color32::WHITE)).fill(theme::ACCENT);
+          install = ui.add(b).clicked();
+        }
+        match &self.self_update {
+          SelfUpdate::Available(rel) if !self.offer_install => {
+            ui.label(
+              RichText::new(format!(
+                "Nuova versione del launcher: {} (in uso {}).",
+                rel.version.text,
+                selfupdate::current_version()
+              ))
+              .color(theme::INK),
+            );
+            ui.add_space(6.0);
+            let b = egui::Button::new(RichText::new("Aggiorna launcher").color(Color32::WHITE)).fill(theme::ACCENT);
+            update = ui.add(b).clicked();
+          }
+          SelfUpdate::Applying => {
+            ui.horizontal(|ui| {
+              ui.spinner();
+              ui.label(RichText::new("Aggiornamento del launcher in corso...").color(theme::MUTED));
+            });
+          }
+          _ => {}
+        }
+      });
+    ui.add_space(12.0);
+    if install {
+      self.install_launcher_for_user();
+    }
+    if update {
+      self.update_launcher();
+    }
   }
 
   fn message(&self, ui: &mut Ui) {
@@ -617,6 +748,28 @@ impl LauncherUi {
       ui.label(theme::hud("Token"));
       ui.label(format!("salvato in: {}", self.store.describe()));
       ui.end_row();
+      ui.label(theme::hud("Launcher"));
+      ui.label(mono(format!(
+        "{}  {}",
+        selfupdate::current_version(),
+        std::env::current_exe().map(|p| p.display().to_string()).unwrap_or_default()
+      )));
+      ui.end_row();
+      ui.label(theme::hud("Aggiornamento"));
+      let state = match &self.self_update {
+        SelfUpdate::Unknown => "—".to_owned(),
+        SelfUpdate::Checking => "controllo...".to_owned(),
+        SelfUpdate::UpToDate => "launcher aggiornato".to_owned(),
+        SelfUpdate::Available(r) => format!("disponibile {}", r.version.text),
+        SelfUpdate::Applying => "in corso...".to_owned(),
+        SelfUpdate::Error(e) => e.clone(),
+      };
+      ui.label(RichText::new(state).color(if matches!(self.self_update, SelfUpdate::Error(_)) {
+        theme::BAD
+      } else {
+        theme::INK
+      }));
+      ui.end_row();
       ui.label(theme::hud("Cartella app"));
       ui.label(mono(self.installer.root().display().to_string()));
       ui.end_row();
@@ -632,6 +785,9 @@ impl LauncherUi {
       }
       if ui.button("Rimuovi token").clicked() {
         self.forget_token();
+      }
+      if self.maybe_updater.is_some() && ui.button("Controlla aggiornamenti del launcher").clicked() {
+        self.check_launcher();
       }
     });
     ui.add_space(8.0);

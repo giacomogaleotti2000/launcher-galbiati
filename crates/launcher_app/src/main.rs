@@ -73,6 +73,8 @@ fn token_store() -> Arc<dyn TokenStore> {
 }
 
 fn main() -> eframe::Result {
+  // avanzi di un aggiornamento del launcher (eseguibile vecchio rinominato)
+  launcher_core::selfupdate::cleanup_after_update();
   let root = match default_root() {
     Ok(r) => r,
     Err(e) => {
@@ -96,6 +98,9 @@ fn main() -> eframe::Result {
       LauncherUi::install_theme(&cc.egui_ctx);
       let mut ui = LauncherUi::new(catalog(), token_store(), default_factory(), Installer::new(root));
       ui.set_context(cc.egui_ctx.clone());
+      ui.offer_install = launcher_core::selfupdate::should_offer_install(ui.installer().root());
+      ui.maybe_updater = Some(launcher_core::selfupdate::LauncherUpdater::default());
+      ui.check_launcher();
       ui.check_all();
       Ok(Box::new(App {
         ui,

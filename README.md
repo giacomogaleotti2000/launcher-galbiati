@@ -7,7 +7,9 @@ CONVERTER) su **Windows** e **macOS (Apple Silicon)**.
 
 Dalla pagina **[Releases](../../releases/latest)** di questo repository, nessun account necessario:
 
-- Windows: `cnc-launcher-<versione>-windows-x64.zip` -> estrai e avvia `cnc-launcher.exe`
+- Windows: `cnc-launcher-<versione>-windows-x64.zip` -> estrai, avvia `cnc-launcher.exe` e premi
+  **Installa per questo utente** (si copia in `%LOCALAPPDATA%`, crea i collegamenti; nessuna password
+  di amministratore, nemmeno per gli aggiornamenti)
 - macOS: `cnc-launcher-<versione>-macos-arm64.tar.gz` -> estrai e avvia `cnc-launcher`
 
 Il launcher non e' firmato: al primo avvio Windows (SmartScreen) chiede *Ulteriori informazioni ->
@@ -24,4 +26,6 @@ cargo run -p launcher_app
 cargo test --workspace
 ```
 
-Nuova versione: tag `launcher-vX.Y.Z` -> la GitHub Action compila Windows e macOS e pubblica la Release.
+Nuova versione: tag `launcher-vX.Y.Z` -> la GitHub Action compila Windows e macOS e pubblica la Release
+(repository pubblico: minuti di GitHub Actions gratuiti). I launcher installati la trovano da soli e
+propongono **Aggiorna launcher**.

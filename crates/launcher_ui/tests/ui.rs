@@ -241,3 +241,26 @@ fn paste_button_reads_clipboard() {
   assert!(h.state().maybe_message.as_ref().is_some_and(|(ok, m)| !ok && m.contains("Appunti vuoti")));
   let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn launcher_banner_offers_install_and_update() {
+  let store = Arc::new(MemoryStore::default());
+  let mut state = launcher(store, factory("0.1.0"), temp_root("banner"));
+  state.offer_install = true;
+  let mut h = harness(state);
+  h.run();
+  h.get_by_label("Installa per questo utente");
+  save(&mut h, "launcher_banner_install");
+
+  h.state_mut().offer_install = false;
+  h.state_mut().self_update =
+    launcher_ui::SelfUpdate::Available(Box::new(launcher_core::selfupdate::LauncherRelease {
+      version: Version::parse("9.0.0").unwrap(),
+      archive_name: "x.zip".to_owned(),
+      archive_url: "http://127.0.0.1:9/x".to_owned(),
+      sha256_url: "http://127.0.0.1:9/s".to_owned(),
+    }));
+  h.run();
+  h.get_by_label("Aggiorna launcher");
+  save(&mut h, "launcher_banner_update");
+}

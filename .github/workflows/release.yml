@@ -50,7 +50,8 @@ jobs:
       - name: Test
         run: cargo test --workspace --locked
       - name: Compilazione
-        run: cargo build --release --locked -p launcher_app --target ${{ matrix.target }}
+        # la versione del tag finisce nell'eseguibile: serve all'auto-aggiornamento del launcher
+        run: CNC_LAUNCHER_VERSION="$VERSION" cargo build --release --locked -p launcher_app --target ${{ matrix.target }}
       - name: Pacchetto
         run: bash scripts/package-launcher.sh "${{ matrix.target }}" "${{ matrix.platform }}" "$VERSION"
       - uses: actions/upload-artifact@v4

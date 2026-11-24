@@ -35,8 +35,7 @@ Non salvarlo in file, mail o chat: incollalo direttamente nel launcher.
    - Windows: `%LOCALAPPDATA%\cnc-launcher\app\...`
    - macOS: `~/Library/Application Support/cnc-launcher/app/...`
 
-   Poi **Apri** avvia l'app. Quando esce una versione nuova compare **AGGIORNAMENTO** e il pulsante
-   **Aggiorna** (la versione vecchia viene rimossa).
+   Poi **Apri** avvia l'app. Aggiornamenti: punto 6.
 
 ## 3. Messaggi di errore
 
@@ -54,18 +53,43 @@ Non salvarlo in file, mail o chat: incollalo direttamente nel launcher.
 - Su GitHub: *Settings -> Developer settings -> Fine-grained tokens* -> apri il token -> **Delete**.
   Fallo subito se perdi o cambi un PC: gli altri PC hanno il loro token e continuano a funzionare.
 
-## 5. Primo download del launcher
+## 5. Primo download e installazione del launcher (senza password di amministratore)
 
 Il launcher si scarica una volta dalla pagina pubblica delle Release, senza account:
 <https://github.com/giacomogaleotti2000/launcher-galbiati/releases/latest> -> file
-`cnc-launcher-<versione>-windows-x64.zip` o `...-macos-arm64.tar.gz`. Estrai la cartella dove
-preferisci e avvia `cnc-launcher.exe` (Windows) o `cnc-launcher` (macOS). Le app invece si
-aggiornano dal launcher.
+`cnc-launcher-<versione>-windows-x64.zip` o `...-macos-arm64.tar.gz`.
 
-- **Windows**: SmartScreen può avvisare ("Windows ha protetto il PC") perché l'eseguibile non è
-  firmato: *Ulteriori informazioni -> Esegui comunque*.
-- **macOS**: la prima volta, clic destro sull'eseguibile -> **Apri** -> **Apri** (app non firmata).
-  In alternativa, nel Terminale: `xattr -dr com.apple.quarantine <cartella estratta>`.
+**Windows**
+
+1. Estrai lo zip dove capita (es. *Download*) e avvia `cnc-launcher.exe`. SmartScreen può avvisare
+   ("Windows ha protetto il PC") perché l'eseguibile non è firmato: *Ulteriori informazioni ->
+   Esegui comunque*.
+2. In alto compare **Installa per questo utente**: premilo. Il launcher si copia in
+   `%LOCALAPPDATA%\cnc-launcher\launcher\cnc-launcher.exe`, crea il collegamento **CNC Launcher**
+   nel menu Start e sul Desktop e si riapre da lì. La cartella estratta in *Download* si può
+   cancellare.
+3. Tutto (launcher, app, aggiornamenti) sta nel profilo dell'utente: **nessuna password di
+   amministratore**, né ora né agli aggiornamenti. Non mettere il launcher in *Programmi*
+   (`C:\Program Files`): lì ogni aggiornamento chiederebbe l'amministratore.
+
+Se il PC aziendale blocca i programmi avviati da `%LOCALAPPDATA%` (criteri AppLocker / Smart App
+Control), l'amministratore deve consentire una volta la cartella `%LOCALAPPDATA%\cnc-launcher`:
+è l'unico passaggio che può richiedere l'amministratore, e si fa una volta sola.
+
+**macOS**: estrai l'archivio dove preferisci; la prima volta clic destro sull'eseguibile ->
+**Apri** -> **Apri** (app non firmata). In alternativa, nel Terminale:
+`xattr -dr com.apple.quarantine <cartella estratta>`.
+
+## 6. Aggiornamenti
+
+- **App** (es. il convertitore): nella Libreria compare **AGGIORNAMENTO** -> **Aggiorna**. La nuova
+  versione si installa nel profilo dell'utente, la vecchia viene rimossa.
+- **Launcher**: a ogni avvio controlla la Release pubblica `launcher-vX.Y.Z` (senza token). Se ce
+  n'è una più recente compare **Aggiorna launcher**: scarica l'archivio, controlla l'impronta
+  SHA-256 pubblicata nel file `.sha256` e sostituisce l'eseguibile, poi si riapre. La versione in
+  uso è in *Impostazioni -> Launcher*.
+- I launcher fino alla 0.4.0 non sanno aggiornarsi da soli: va scaricata a mano una volta la 0.5.0
+  (punto 5); da lì in poi si aggiorna da solo.
 
 ## In futuro
 

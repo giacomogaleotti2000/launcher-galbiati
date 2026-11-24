@@ -99,13 +99,7 @@ impl Installer {
       std::fs::remove_dir_all(&dest).map_err(|e| io_err("pulizia della versione precedente", e))?;
     }
     std::fs::create_dir_all(&dest).map_err(|e| io_err("cartella di installazione", e))?;
-    if asset.file.ends_with(".zip") {
-      extract_zip(archive, &dest)?;
-    } else if asset.file.ends_with(".tar.gz") || asset.file.ends_with(".tgz") {
-      extract_tar_gz(archive, &dest)?;
-    } else {
-      return Err(LauncherError::new(format!("formato di archivio non gestito: {}", asset.file)));
-    }
+    extract_archive(&asset.file, archive, &dest)?;
     let rel = safe_relative(Path::new(&asset.executable))
       .ok_or_else(|| LauncherError::new("percorso dell'eseguibile non valido nel manifest"))?;
     let executable = dest.join(rel);
@@ -135,6 +129,17 @@ impl Installer {
       cmd.current_dir(dir);
     }
     cmd.spawn().map(|_| ()).map_err(|e| io_err("avvio dell'app", e))
+  }
+}
+
+/// Estrae un archivio `.zip` o `.tar.gz` (scelto dal nome del file) in `dest`.
+pub(crate) fn extract_archive(file: &str, archive: &[u8], dest: &Path) -> Result<()> {
+  if file.ends_with(".zip") {
+    extract_zip(archive, dest)
+  } else if file.ends_with(".tar.gz") || file.ends_with(".tgz") {
+    extract_tar_gz(archive, dest)
+  } else {
+    Err(LauncherError::new(format!("formato di archivio non gestito: {file}")))
   }
 }
 

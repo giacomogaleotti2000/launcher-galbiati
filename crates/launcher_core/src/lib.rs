@@ -6,12 +6,14 @@
 //!   rete" (`\\server\cnc\...`) si aggiunge implementando lo stesso trait;
 //! - [`manifest`]: il `manifest.json` di ogni rilascio (piattaforme, file, SHA-256);
 //! - [`install`]: verifica SHA-256, estrazione sicura, installazione per utente, avvio;
+//! - [`selfupdate`]: il launcher si installa per utente e si aggiorna da solo (senza amministratore);
 //! - [`secret`]: il token nel portachiavi del sistema (mai su disco in chiaro, mai nei log).
 
 pub mod catalog;
 pub mod install;
 pub mod manifest;
 pub mod secret;
+pub mod selfupdate;
 pub mod source;
 pub mod version;
 
